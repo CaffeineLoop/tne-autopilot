@@ -1,0 +1,20 @@
+{
+  "route_caps": {
+    "BLR-DEL": 9000,
+    "BLR-BOM": 8000,
+    "BOM-DEL": 8500,
+    "DEL-BLR": 6500,
+    "MAA-BLR": 7000,
+    "BLR-MAA": 7000
+  },
+  "category_caps": {
+    "Meals": 1000,
+    "Entertainment": 1000,
+    "Taxi": 1500,
+    "Hotel": 8000
+  },
+  "rules": {
+    "min_advance_days": 3,
+    "max_weekend_entertainment": 500
+  }
+}
