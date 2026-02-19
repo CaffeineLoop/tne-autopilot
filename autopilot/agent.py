@@ -17,22 +17,20 @@ from autopilot.simulation import run_simulation
 import os
 from datetime import datetime
 
-HISTORY_FILE = "data/history/autopilot_runs.json"
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+HISTORY_FILE = os.path.join(BASE_DIR, "data", "history", "autopilot_runs.json")
 
 
 def log_autopilot_run(plan):
 
     history_dir = os.path.dirname(HISTORY_FILE)
     os.makedirs(history_dir, exist_ok=True)
+
     run_record = {
         "timestamp": datetime.now().isoformat(),
-
         "total_spend": plan.total_spend,
-
         "estimated_leakage": plan.estimated_leakage,
-
         "potential_savings": plan.potential_monthly_savings,
-
         "recommendations": [
             {
                 "id": r.id,
@@ -46,18 +44,15 @@ def log_autopilot_run(plan):
     }
 
     if not os.path.exists(HISTORY_FILE):
-
         with open(HISTORY_FILE, "w") as f:
             json.dump([], f)
 
     with open(HISTORY_FILE, "r") as f:
-
         history = json.load(f)
 
     history.append(run_record)
 
     with open(HISTORY_FILE, "w") as f:
-
         json.dump(history, f, indent=2)
 
 
