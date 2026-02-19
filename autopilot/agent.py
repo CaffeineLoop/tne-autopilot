@@ -14,10 +14,12 @@ from autopilot.detection import run_detection
 from autopilot.recommendations import generate_recommendations
 from autopilot.simulation import run_simulation
 
-from datetime import datetime
 
 # -------------------------------------------------------
 # Safe logging function (Streamlit Cloud compatible)
+# Uses BaseException to catch ALL errors including Streamlit
+# internal NoSessionState errors which are not subclasses
+# of Exception.
 # -------------------------------------------------------
 
 def log_autopilot_run(plan):
@@ -42,14 +44,18 @@ def log_autopilot_run(plan):
             ]
         }
 
-        if "autopilot_history" not in st.session_state:
-            st.session_state.autopilot_history = []
+        # Guard: check session_state is actually available before writing
+        if hasattr(st, "session_state"):
+            if "autopilot_history" not in st.session_state:
+                st.session_state.autopilot_history = []
+            st.session_state.autopilot_history.append(run_record)
 
-        st.session_state.autopilot_history.append(run_record)
-
-    except Exception:
-        # Never crash autopilot because of logging
+    except BaseException:
+        # Catch everything — Streamlit Cloud can raise non-Exception
+        # errors (e.g. NoSessionState) when session_state is accessed
+        # outside a valid request context. Never crash autopilot for this.
         pass
+
 
 # -------------------------------------------------------
 # Helpers
@@ -216,7 +222,7 @@ def run_autopilot(
         suggested_policy_changes=policy_changes
     )
 
-    # NEW: Log run for continuous learning
+    # Log run for continuous learning (safe — never raises)
     log_autopilot_run(plan)
 
     return plan

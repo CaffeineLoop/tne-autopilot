@@ -92,12 +92,30 @@ st.caption(
 
 
 # ---------------------------------------------------
-# Run autopilot
+# Session state init
 # ---------------------------------------------------
 
 if "plan" not in st.session_state:
     st.session_state.plan = None
 
+if "autopilot_history" not in st.session_state:
+    st.session_state.autopilot_history = []
+
+
+# ---------------------------------------------------
+# Helper: get history from session_state only
+# Streamlit Cloud has a read-only filesystem, so we
+# never read/write history from disk — session_state
+# is the single source of truth for run history.
+# ---------------------------------------------------
+
+def get_history():
+    return st.session_state.get("autopilot_history", [])
+
+
+# ---------------------------------------------------
+# Run autopilot
+# ---------------------------------------------------
 
 if st.button("Run Autopilot"):
 
@@ -111,13 +129,20 @@ if st.button("Run Autopilot"):
     st.session_state.plan = plan
 
     if mode == "Apply":
-
-        new_policies = apply_plan_to_policies(plan, policies)
-
-        with open("data/policies.json", "w") as f:
-            json.dump(new_policies, f, indent=2)
-
-        st.success("Policies updated in sandbox.")
+        # NOTE: Writing to data/policies.json will silently fail on
+        # Streamlit Cloud (read-only filesystem). Policy changes are
+        # reflected in-memory for this session only. To persist policy
+        # changes, connect a database (e.g. Supabase) or use st.secrets.
+        try:
+            new_policies = apply_plan_to_policies(plan, policies)
+            with open("data/policies.json", "w") as f:
+                json.dump(new_policies, f, indent=2)
+            st.success("Policies updated.")
+        except OSError:
+            st.warning(
+                "Policy changes applied in-memory for this session. "
+                "Persistent saves are not available on Streamlit Cloud."
+            )
 
 
 plan = st.session_state.plan
@@ -320,18 +345,22 @@ elif page == "Policies":
 
         policies["route_caps"] = updated_route_caps
         policies["category_caps"] = updated_category_caps
-
         policies["rules"]["min_advance_days"] = min_days
         policies["rules"]["max_weekend_entertainment"] = max_weekend
 
-        with open("data/policies.json", "w") as f:
-            json.dump(policies, f, indent=2)
-
-        st.success("Policies saved successfully.")
+        try:
+            with open("data/policies.json", "w") as f:
+                json.dump(policies, f, indent=2)
+            st.success("Policies saved successfully.")
+        except OSError:
+            st.warning(
+                "Policies updated in-memory for this session. "
+                "Persistent saves are not available on Streamlit Cloud."
+            )
 
 
 # ---------------------------------------------------
-# Ask T&E page (UPDATED — Stage 6 Operational AI)
+# Ask T&E page
 # ---------------------------------------------------
 
 elif page == "Ask T&E":
@@ -344,17 +373,17 @@ elif page == "Ask T&E":
 
         if plan:
 
-            with open("data/history/autopilot_runs.json") as f:
-                history = json.load(f)
+            # FIXED: Read history from session_state, not from disk.
+            # data/history/autopilot_runs.json does not exist on
+            # Streamlit Cloud — the filesystem is read-only.
+            history = get_history()
 
             metrics = {
-
                 "current_plan": {
                     "total_spend": plan.total_spend,
                     "leakage": plan.estimated_leakage,
                     "savings": plan.potential_monthly_savings
                 },
-
                 "run_history": history[-5:]
             }
 
@@ -375,26 +404,21 @@ elif page == "Autopilot Learning":
 
     st.header("Autopilot Learning Insights")
 
-    try:
+    # FIXED: Read history from session_state, not from disk.
+    # data/history/autopilot_runs.json does not exist on
+    # Streamlit Cloud — the filesystem is read-only.
+    history = get_history()
 
-        with open("data/history/autopilot_runs.json") as f:
+    if history:
 
-            history = json.load(f)
+        insights = analyze_autopilot_history(history)
 
-        if history:
+        st.write(insights)
 
-            insights = analyze_autopilot_history(history)
+        st.subheader("Run History")
 
-            st.write(insights)
+        st.json(history)
 
-            st.subheader("Run History")
+    else:
 
-            st.json(history)
-
-        else:
-
-            st.info("No runs recorded yet.")
-
-    except:
-
-        st.info("History file not found.")
+        st.info("No runs recorded yet. Run Autopilot to start building history.")
