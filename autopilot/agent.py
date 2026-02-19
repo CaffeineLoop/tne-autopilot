@@ -14,36 +14,7 @@ from autopilot.detection import run_detection
 from autopilot.recommendations import generate_recommendations
 from autopilot.simulation import run_simulation
 
-import os
 from datetime import datetime
-
-
-# -------------------------------------------------------
-# FIXED: Safe absolute project root path
-# -------------------------------------------------------
-
-PROJECT_ROOT = os.path.abspath(
-    os.path.join(os.path.dirname(__file__), "..")
-)
-
-HISTORY_FILE = os.path.join(
-    PROJECT_ROOT,
-    "data",
-    "history",
-    "autopilot_runs.json"
-)
-
-
-# -------------------------------------------------------
-# CRITICAL FIX: Ensure directory AND file exist on startup
-# -------------------------------------------------------
-
-os.makedirs(os.path.dirname(HISTORY_FILE), exist_ok=True)
-
-if not os.path.exists(HISTORY_FILE):
-    with open(HISTORY_FILE, "w") as f:
-        json.dump([], f)
-
 
 # -------------------------------------------------------
 # Safe logging function (Streamlit Cloud compatible)
