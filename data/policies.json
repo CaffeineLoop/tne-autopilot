@@ -15,6 +15,7 @@
   },
   "rules": {
     "min_advance_days": 3,
-    "max_weekend_entertainment": 500
+    "max_weekend_entertainment": 500,
+    "min_advance_days_BLR-DEL": 5
   }
 }

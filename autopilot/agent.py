@@ -22,6 +22,8 @@ HISTORY_FILE = "data/history/autopilot_runs.json"
 
 def log_autopilot_run(plan):
 
+    history_dir = os.path.dirname(HISTORY_FILE)
+    os.makedirs(history_dir, exist_ok=True)
     run_record = {
         "timestamp": datetime.now().isoformat(),
 
