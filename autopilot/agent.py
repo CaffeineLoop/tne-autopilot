@@ -16,48 +16,6 @@ from autopilot.simulation import run_simulation
 
 
 # -------------------------------------------------------
-# Safe logging function (Streamlit Cloud compatible)
-# Uses BaseException to catch ALL errors including Streamlit
-# internal NoSessionState errors which are not subclasses
-# of Exception.
-# -------------------------------------------------------
-
-def log_autopilot_run(plan):
-
-    try:
-        import streamlit as st
-
-        run_record = {
-            "timestamp": datetime.now().isoformat(),
-            "total_spend": plan.total_spend,
-            "estimated_leakage": plan.estimated_leakage,
-            "potential_savings": plan.potential_monthly_savings,
-            "recommendations": [
-                {
-                    "id": r.id,
-                    "title": r.title,
-                    "lever_type": r.lever_type,
-                    "savings": r.estimated_monthly_savings,
-                    "risk": r.risk_level
-                }
-                for r in plan.approved_recommendations
-            ]
-        }
-
-        # Guard: check session_state is actually available before writing
-        if hasattr(st, "session_state"):
-            if "autopilot_history" not in st.session_state:
-                st.session_state.autopilot_history = []
-            st.session_state.autopilot_history.append(run_record)
-
-    except BaseException:
-        # Catch everything — Streamlit Cloud can raise non-Exception
-        # errors (e.g. NoSessionState) when session_state is accessed
-        # outside a valid request context. Never crash autopilot for this.
-        pass
-
-
-# -------------------------------------------------------
 # Helpers
 # -------------------------------------------------------
 
@@ -221,9 +179,6 @@ def run_autopilot(
 
         suggested_policy_changes=policy_changes
     )
-
-    # Log run for continuous learning (safe — never raises)
-    log_autopilot_run(plan)
 
     return plan
 

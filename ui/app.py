@@ -103,17 +103,6 @@ if "autopilot_history" not in st.session_state:
 
 
 # ---------------------------------------------------
-# Helper: get history from session_state only
-# Streamlit Cloud has a read-only filesystem, so we
-# never read/write history from disk — session_state
-# is the single source of truth for run history.
-# ---------------------------------------------------
-
-def get_history():
-    return st.session_state.get("autopilot_history", [])
-
-
-# ---------------------------------------------------
 # Run autopilot
 # ---------------------------------------------------
 
@@ -128,11 +117,27 @@ if st.button("Run Autopilot"):
 
     st.session_state.plan = plan
 
+    # Log run into session_state (safe — we are in Streamlit context here)
+    run_record = {
+        "timestamp": str(pd.Timestamp.now()),
+        "total_spend": plan.total_spend,
+        "estimated_leakage": plan.estimated_leakage,
+        "potential_savings": plan.potential_monthly_savings,
+        "recommendations": [
+            {
+                "id": r.id,
+                "title": r.title,
+                "lever_type": r.lever_type,
+                "savings": r.estimated_monthly_savings,
+                "risk": r.risk_level
+            }
+            for r in plan.approved_recommendations
+        ]
+    }
+    st.session_state.autopilot_history.append(run_record)
+
     if mode == "Apply":
-        # NOTE: Writing to data/policies.json will silently fail on
-        # Streamlit Cloud (read-only filesystem). Policy changes are
-        # reflected in-memory for this session only. To persist policy
-        # changes, connect a database (e.g. Supabase) or use st.secrets.
+
         try:
             new_policies = apply_plan_to_policies(plan, policies)
             with open("data/policies.json", "w") as f:
@@ -373,10 +378,7 @@ elif page == "Ask T&E":
 
         if plan:
 
-            # FIXED: Read history from session_state, not from disk.
-            # data/history/autopilot_runs.json does not exist on
-            # Streamlit Cloud — the filesystem is read-only.
-            history = get_history()
+            history = st.session_state.autopilot_history
 
             metrics = {
                 "current_plan": {
@@ -404,10 +406,7 @@ elif page == "Autopilot Learning":
 
     st.header("Autopilot Learning Insights")
 
-    # FIXED: Read history from session_state, not from disk.
-    # data/history/autopilot_runs.json does not exist on
-    # Streamlit Cloud — the filesystem is read-only.
-    history = get_history()
+    history = st.session_state.autopilot_history
 
     if history:
 
