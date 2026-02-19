@@ -51,41 +51,34 @@ if not os.path.exists(HISTORY_FILE):
 
 def log_autopilot_run(plan):
 
-    # Ensure directory exists
-    history_dir = os.path.dirname(HISTORY_FILE)
-    os.makedirs(history_dir, exist_ok=True)
-
-    run_record = {
-        "timestamp": datetime.now().isoformat(),
-        "total_spend": plan.total_spend,
-        "estimated_leakage": plan.estimated_leakage,
-        "potential_savings": plan.potential_monthly_savings,
-        "recommendations": [
-            {
-                "id": r.id,
-                "title": r.title,
-                "lever_type": r.lever_type,
-                "savings": r.estimated_monthly_savings,
-                "risk": r.risk_level
-            }
-            for r in plan.approved_recommendations
-        ]
-    }
-
-    # Read existing history safely
     try:
-        with open(HISTORY_FILE, "r") as f:
-            history = json.load(f)
-    except:
-        history = []
+        import streamlit as st
 
-    # Append new record
-    history.append(run_record)
+        run_record = {
+            "timestamp": datetime.now().isoformat(),
+            "total_spend": plan.total_spend,
+            "estimated_leakage": plan.estimated_leakage,
+            "potential_savings": plan.potential_monthly_savings,
+            "recommendations": [
+                {
+                    "id": r.id,
+                    "title": r.title,
+                    "lever_type": r.lever_type,
+                    "savings": r.estimated_monthly_savings,
+                    "risk": r.risk_level
+                }
+                for r in plan.approved_recommendations
+            ]
+        }
 
-    # Save history
-    with open(HISTORY_FILE, "w") as f:
-        json.dump(history, f, indent=2)
+        if "autopilot_history" not in st.session_state:
+            st.session_state.autopilot_history = []
 
+        st.session_state.autopilot_history.append(run_record)
+
+    except Exception:
+        # Never crash autopilot because of logging
+        pass
 
 # -------------------------------------------------------
 # Helpers
