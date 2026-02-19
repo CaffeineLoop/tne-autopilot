@@ -17,12 +17,30 @@ from autopilot.simulation import run_simulation
 import os
 from datetime import datetime
 
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-HISTORY_FILE = os.path.join(BASE_DIR, "data", "history", "autopilot_runs.json")
 
+# -------------------------------------------------------
+# FIXED: Safe absolute project root path
+# -------------------------------------------------------
+
+PROJECT_ROOT = os.path.abspath(
+    os.path.join(os.path.dirname(__file__), "..")
+)
+
+HISTORY_FILE = os.path.join(
+    PROJECT_ROOT,
+    "data",
+    "history",
+    "autopilot_runs.json"
+)
+
+
+# -------------------------------------------------------
+# FIXED: Safe logging function (Streamlit Cloud compatible)
+# -------------------------------------------------------
 
 def log_autopilot_run(plan):
 
+    # Ensure directory exists
     history_dir = os.path.dirname(HISTORY_FILE)
     os.makedirs(history_dir, exist_ok=True)
 
@@ -43,15 +61,19 @@ def log_autopilot_run(plan):
         ]
     }
 
+    # Create file if missing
     if not os.path.exists(HISTORY_FILE):
         with open(HISTORY_FILE, "w") as f:
             json.dump([], f)
 
+    # Read existing history
     with open(HISTORY_FILE, "r") as f:
         history = json.load(f)
 
+    # Append new record
     history.append(run_record)
 
+    # Save history
     with open(HISTORY_FILE, "w") as f:
         json.dump(history, f, indent=2)
 
@@ -221,9 +243,7 @@ def run_autopilot(
         suggested_policy_changes=policy_changes
     )
 
-    # -------------------------------------------------------
-    # NEW: Log this run for continuous learning
-    # -------------------------------------------------------
+    # NEW: Log run for continuous learning
     log_autopilot_run(plan)
 
     return plan
