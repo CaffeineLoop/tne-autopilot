@@ -1,8 +1,9 @@
 T&E Autopilot (AI Travel & Expense Optimization Agent)
 
+
+
 This project is a working prototype of an AI agent that automatically analyzes a company’s travel and expense data, finds unnecessary spending, recommends improvements, and estimates savings before applying changes.
 It is inspired by how modern travel platforms like ITILITE help companies optimize travel costs, but goes one step further by adding an autonomous “Autopilot” layer that can continuously detect problems, recommend fixes, simulate outcomes, and learn over time.
-
 The goal of this project is to demonstrate how such an intelligent optimization system could be built end-to-end.
 
 
@@ -49,6 +50,8 @@ Learning Layer
 Natural Language Interface
 → allows users to ask questions about the system
 
+
+
 Technology used
 
 Python
@@ -58,6 +61,8 @@ Groq API (LLM intelligence layer)
 Synthetic travel & expense dataset
 
 The system is modular and can easily be connected to real company APIs instead of CSV data.
+
+
 
 
 How to run locally?
@@ -105,6 +110,8 @@ This project demonstrates how an AI agent can close that gap by automatically:
 
 This makes optimization continuous instead of manual.
 
+
+
 Notes
 
 This is a prototype built using synthetic data for demonstration purposes.
@@ -112,4 +119,5 @@ The same architecture can be applied to real company travel systems.
 
 
 Built as part of an exploration into autonomous enterprise optimization systems.
+
 
