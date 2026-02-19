@@ -35,7 +35,18 @@ HISTORY_FILE = os.path.join(
 
 
 # -------------------------------------------------------
-# FIXED: Safe logging function (Streamlit Cloud compatible)
+# CRITICAL FIX: Ensure directory AND file exist on startup
+# -------------------------------------------------------
+
+os.makedirs(os.path.dirname(HISTORY_FILE), exist_ok=True)
+
+if not os.path.exists(HISTORY_FILE):
+    with open(HISTORY_FILE, "w") as f:
+        json.dump([], f)
+
+
+# -------------------------------------------------------
+# Safe logging function (Streamlit Cloud compatible)
 # -------------------------------------------------------
 
 def log_autopilot_run(plan):
@@ -61,14 +72,12 @@ def log_autopilot_run(plan):
         ]
     }
 
-    # Create file if missing
-    if not os.path.exists(HISTORY_FILE):
-        with open(HISTORY_FILE, "w") as f:
-            json.dump([], f)
-
-    # Read existing history
-    with open(HISTORY_FILE, "r") as f:
-        history = json.load(f)
+    # Read existing history safely
+    try:
+        with open(HISTORY_FILE, "r") as f:
+            history = json.load(f)
+    except:
+        history = []
 
     # Append new record
     history.append(run_record)
