@@ -306,7 +306,39 @@ elif page == "Autopilot":
                     f"Annual Savings: ₹{int(sim.annual_savings):,}"
                 )
 
-                st.write(sim.explanation)
+                st.markdown("### Why this recommendation?")
+
+                st.info(sim.explanation)
+
+                st.markdown("### Expected Impact")
+
+                imp_col1, imp_col2, imp_col3 = st.columns(3)
+
+                imp_col1.metric(
+                    "Monthly Savings",
+                    f"₹{int(sim.monthly_savings):,}"
+                )
+
+                imp_col2.metric(
+                    "Annual Savings",
+                    f"₹{int(sim.annual_savings):,}"
+                )
+
+                imp_col3.metric(
+                    "Savings %",
+                    f"{sim.savings_pct * 100:.1f}%"
+                )
+
+                st.markdown("### Confidence Score")
+
+                confidence = getattr(sim, "confidence_score", 75.0)
+
+                st.metric(
+                    "Confidence",
+                    f"{int(confidence)}%"
+                )
+
+                st.progress(confidence / 100)
 
                 df = pd.DataFrame({
                     "Scenario": ["Before", "After"],
@@ -432,6 +464,42 @@ elif page == "Policies":
                 "Persistent saves are not available on Streamlit Cloud."
             )
 
+    # ---------------------------------------------------
+    # Before vs After Policy View
+    # ---------------------------------------------------
+
+    if plan:
+
+        st.markdown("---")
+
+        st.subheader("Autopilot Policy Changes Preview")
+
+        try:
+
+            new_policies = apply_plan_to_policies(plan, policies)
+
+            col1, col2 = st.columns(2)
+
+            with col1:
+
+                st.write("**Current Policies**")
+
+                st.json(policies)
+
+            with col2:
+
+                st.write("**Autopilot Proposed Policies**")
+
+                st.json(new_policies)
+
+        except Exception:
+
+            st.warning("Policy preview unavailable.")
+
+    else:
+
+        st.info("Run Autopilot to preview proposed policy changes.")
+
 
 # ---------------------------------------------------
 # Ask T&E page
@@ -473,20 +541,124 @@ elif page == "Ask T&E":
 
 elif page == "Autopilot Learning":
 
-    st.header("Autopilot Learning Insights")
+    st.header("Autopilot Run History")
 
     history = st.session_state.autopilot_history
 
-    if history:
+    if not history:
+
+        st.info("No runs recorded yet. Run Autopilot to start building history.")
+
+    else:
+
+        # ---------------------------------------------------
+        # LLM learning insights (existing feature — preserved)
+        # ---------------------------------------------------
 
         insights = analyze_autopilot_history(history)
 
         st.write(insights)
 
-        st.subheader("Run History")
+        st.markdown("---")
 
-        st.json(history)
+        # ---------------------------------------------------
+        # Summary metrics
+        # ---------------------------------------------------
 
-    else:
+        st.subheader("Summary")
 
-        st.info("No runs recorded yet. Run Autopilot to start building history.")
+        total_runs = len(history)
+
+        latest = history[-1]
+
+        col1, col2, col3 = st.columns(3)
+
+        col1.metric("Total Runs", total_runs)
+
+        col2.metric(
+            "Latest Monthly Savings",
+            f"₹{int(latest['potential_savings']):,}"
+        )
+
+        col3.metric(
+            "Latest Leakage Detected",
+            f"₹{int(latest['estimated_leakage']):,}"
+        )
+
+        st.markdown("---")
+
+        # ---------------------------------------------------
+        # Run timeline table
+        # ---------------------------------------------------
+
+        st.subheader("Run Timeline")
+
+        history_df = pd.DataFrame(history)
+
+        history_df = history_df.sort_values(
+            by="timestamp",
+            ascending=False
+        )
+
+        history_df["timestamp"] = pd.to_datetime(
+            history_df["timestamp"]
+        ).dt.strftime("%Y-%m-%d %H:%M:%S")
+
+        history_df["total_spend"] = history_df["total_spend"].astype(int)
+        history_df["estimated_leakage"] = history_df["estimated_leakage"].astype(int)
+        history_df["potential_savings"] = history_df["potential_savings"].astype(int)
+
+        st.dataframe(
+            history_df[[
+                "timestamp",
+                "total_spend",
+                "estimated_leakage",
+                "potential_savings"
+            ]],
+            use_container_width=True
+        )
+
+        st.markdown("---")
+
+        # ---------------------------------------------------
+        # Savings trend chart
+        # ---------------------------------------------------
+
+        st.subheader("Savings Trend")
+
+        fig = px.line(
+            history_df,
+            x="timestamp",
+            y="potential_savings",
+            markers=True,
+            title="Autopilot Savings Over Time"
+        )
+
+        st.plotly_chart(fig, use_container_width=True)
+
+        st.markdown("---")
+
+        # ---------------------------------------------------
+        # Detailed run logs
+        # ---------------------------------------------------
+
+        st.subheader("Detailed Run Logs")
+
+        for run in reversed(history):
+
+            with st.expander(
+                f"{run['timestamp']} — ₹{int(run['potential_savings']):,} savings"
+            ):
+
+                st.write("Total Spend:", f"₹{int(run['total_spend']):,}")
+                st.write("Leakage:", f"₹{int(run['estimated_leakage']):,}")
+                st.write("Savings:", f"₹{int(run['potential_savings']):,}")
+
+                st.write("Recommendations:")
+
+                for reco in run["recommendations"]:
+
+                    st.write(
+                        f"• {reco['title']} "
+                        f"(₹{int(reco['savings']):,}, {reco['risk']})"
+                    )

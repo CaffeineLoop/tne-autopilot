@@ -36,6 +36,8 @@ class SimulationResult:
 
     explanation: str
 
+    confidence_score: float = 75.0
+
     from typing import List
 
 
@@ -55,4 +57,3 @@ class AutopilotPlan:
     simulations: List[SimulationResult]
 
     suggested_policy_changes: List[dict]
-

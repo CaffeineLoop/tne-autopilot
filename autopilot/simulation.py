@@ -83,6 +83,8 @@ def simulate_advance_booking_change(
         f"reducing airfare costs."
     )
 
+    confidence = min(95.0, max(50.0, pct * 100 + 50))
+
     return SimulationResult(
         recommendation_id=reco.id,
         baseline_spend=float(baseline),
@@ -90,6 +92,7 @@ def simulate_advance_booking_change(
         monthly_savings=float(monthly),
         annual_savings=float(annual),
         savings_pct=float(pct),
+        confidence_score=float(confidence),
         explanation=explanation
     )
 
@@ -158,6 +161,8 @@ def simulate_preferred_hotel_change(
         f"reduces average nightly rates on {route}."
     )
 
+    confidence = min(95.0, max(50.0, pct * 100 + 50))
+
     return SimulationResult(
         recommendation_id=reco.id,
         baseline_spend=float(baseline),
@@ -165,6 +170,7 @@ def simulate_preferred_hotel_change(
         monthly_savings=float(monthly),
         annual_savings=float(annual),
         savings_pct=float(pct),
+        confidence_score=float(confidence),
         explanation=explanation
     )
 
@@ -215,6 +221,8 @@ def simulate_expense_cap_change(
         "weekend entertainment expenses."
     )
 
+    confidence = min(95.0, max(50.0, pct * 100 + 50))
+
     return SimulationResult(
         recommendation_id=reco.id,
         baseline_spend=float(baseline),
@@ -222,6 +230,7 @@ def simulate_expense_cap_change(
         monthly_savings=float(monthly),
         annual_savings=float(annual),
         savings_pct=float(pct),
+        confidence_score=float(confidence),
         explanation=explanation
     )
 
