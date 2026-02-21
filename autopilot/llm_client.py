@@ -12,7 +12,7 @@ client = Groq(
 )
 
 
-MODEL = "llama-3.1-8b-instant"
+MODEL = "llama-3.3-70b-versatile"
 
 
 def generate_recommendations_with_llm(findings):

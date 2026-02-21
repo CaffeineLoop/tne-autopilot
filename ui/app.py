@@ -72,12 +72,46 @@ config = {
     "max_risk": max_risk
 }
 
+# ---------------------------------------------------
+# File Upload (sidebar)
+# ---------------------------------------------------
+
+st.sidebar.markdown("---")
+st.sidebar.subheader("Upload Custom Data")
+
+uploaded_trips = st.sidebar.file_uploader(
+    "Upload trips.csv",
+    type=["csv"],
+    help="Replaces default trips data for this session only."
+)
+
+uploaded_expenses = st.sidebar.file_uploader(
+    "Upload expenses.csv",
+    type=["csv"],
+    help="Replaces default expenses data for this session only."
+)
+
 
 # ---------------------------------------------------
 # Load data
 # ---------------------------------------------------
 
 trips, expenses, policies = load_data()
+
+# Override with uploaded files if provided (session-scoped, no backend files modified)
+if uploaded_trips is not None:
+    try:
+        trips = pd.read_csv(uploaded_trips)
+        st.sidebar.success("Custom trips.csv loaded.")
+    except Exception as e:
+        st.sidebar.error(f"Failed to read trips.csv: {e}")
+
+if uploaded_expenses is not None:
+    try:
+        expenses = pd.read_csv(uploaded_expenses)
+        st.sidebar.success("Custom expenses.csv loaded.")
+    except Exception as e:
+        st.sidebar.error(f"Failed to read expenses.csv: {e}")
 
 
 # ---------------------------------------------------
@@ -175,6 +209,41 @@ if plan:
         "Potential Monthly Savings",
         f"₹{int(plan.potential_monthly_savings):,}"
     )
+
+    # ---------------------------------------------------
+    # Decision Summary
+    # ---------------------------------------------------
+
+    st.markdown("---")
+
+    st.subheader("Decision Summary")
+
+    num_changes = len(plan.approved_recommendations)
+
+    annual_savings = plan.potential_monthly_savings * 12
+
+    if num_changes == 0:
+
+        st.info(
+            "Autopilot analyzed the dataset and found no safe optimization "
+            "opportunities within current guardrails."
+        )
+
+    else:
+
+        st.success(
+            f"Autopilot analyzed ₹{int(plan.total_spend):,} in travel and expense spend. "
+            f"It identified ₹{int(plan.estimated_leakage):,} in potential leakage and "
+            f"recommends implementing {num_changes} policy change(s). "
+            f"These changes are expected to save ₹{int(plan.potential_monthly_savings):,} "
+            f"per month (₹{int(annual_savings):,} annually) within your configured risk guardrails."
+        )
+
+        st.write("**Primary optimization areas:**")
+
+        for reco in plan.approved_recommendations:
+
+            st.write(f"• {reco.title}")
 
 
 # ---------------------------------------------------
